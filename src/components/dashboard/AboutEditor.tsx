@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,21 +117,66 @@ const AboutEditor = () => {
     setCredentials(credentials.filter(cred => cred.id !== id));
   };
 
-  const saveChanges = () => {
+  const saveChanges = async () => {
     setIsSaving(true);
     
-    // Simulate API call to save changes
-    setTimeout(() => {
+    try {
+      // Prepare the data to save
+      const dataToSave = {
+        ...aboutData,
+        credentials: credentials.map(cred => ({
+          icon: cred.icon,
+          title: cred.title,
+          description: cred.description
+        }))
+      };
+      
+      // Send to Netlify function
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/about`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSave)
+      });
+      
+      if (response.ok) {
+        setIsEditing(false);
+        alert("About section changes saved successfully!");
+      } else {
+        throw new Error('Failed to save about section data');
+      }
+    } catch (error) {
+      console.error('Error saving about section data:', error);
+      alert("Error saving changes. Please try again.");
+    } finally {
       setIsSaving(false);
-      setIsEditing(false);
-      alert("Changes saved successfully!");
-    }, 1000);
+    }
   };
 
   const getIconComponent = (iconName) => {
     const icon = iconOptions.find(option => option.value === iconName);
     return icon ? icon.component : <Medal className="h-5 w-5" />;
   };
+
+  useEffect(() => {
+    const fetchFooterData = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/footer`);
+        if (response.ok) {
+          const data = await response.json();
+          setFooterData(data);
+          if (data.socialLinks) setSocialLinks(data.socialLinks);
+          if (data.quickLinks) setQuickLinks(data.quickLinks);
+        }
+      } catch (error) {
+        console.error('Error fetching footer data:', error);
+        // Fallback to initial data
+      }
+    };
+
+    fetchFooterData();
+  }, []);
 
   return (
     <div>
