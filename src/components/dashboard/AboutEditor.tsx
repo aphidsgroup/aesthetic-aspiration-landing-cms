@@ -61,6 +61,36 @@ const AboutEditor = () => {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch about data from API
+  useEffect(() => {
+    const fetchAboutData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/about`);
+        if (response.ok) {
+          const data = await response.json();
+          setAboutData({
+            title: data.title || initialAboutData.title,
+            subtitle: data.subtitle || initialAboutData.subtitle,
+            imageUrl: data.imageUrl || initialAboutData.imageUrl
+          });
+          
+          if (data.credentials && Array.isArray(data.credentials)) {
+            setCredentials(data.credentials);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching about data:', error);
+        // Fallback to initial data
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAboutData();
+  }, []);
 
   const handleAboutDataChange = (e) => {
     const { name, value } = e.target;
@@ -124,11 +154,7 @@ const AboutEditor = () => {
       // Prepare the data to save
       const dataToSave = {
         ...aboutData,
-        credentials: credentials.map(cred => ({
-          icon: cred.icon,
-          title: cred.title,
-          description: cred.description
-        }))
+        credentials
       };
       
       // Send to Netlify function
@@ -158,25 +184,6 @@ const AboutEditor = () => {
     const icon = iconOptions.find(option => option.value === iconName);
     return icon ? icon.component : <Medal className="h-5 w-5" />;
   };
-
-  useEffect(() => {
-    const fetchFooterData = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/footer`);
-        if (response.ok) {
-          const data = await response.json();
-          setFooterData(data);
-          if (data.socialLinks) setSocialLinks(data.socialLinks);
-          if (data.quickLinks) setQuickLinks(data.quickLinks);
-        }
-      } catch (error) {
-        console.error('Error fetching footer data:', error);
-        // Fallback to initial data
-      }
-    };
-
-    fetchFooterData();
-  }, []);
 
   return (
     <div>
@@ -268,7 +275,10 @@ const AboutEditor = () => {
                       src={aboutData.imageUrl} 
                       alt="Preview" 
                       className="w-full h-full object-cover"
-                      onError={(e) => e.target.src = "https://placehold.co/600x400?text=Invalid+Image+URL"}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = "https://placehold.co/600x400?text=Invalid+Image+URL";
+                      }}
                     />
                   </div>
                 </div>
@@ -407,4 +417,4 @@ const AboutEditor = () => {
   );
 };
 
-export default AboutEditor; 
+export default AboutEditor;
