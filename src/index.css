@@ -1,0 +1,85 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 34 33% 96%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 39 54% 51%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 39 24% 41%;
+    --secondary-foreground: 34 33% 96%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 39 24% 41%;
+
+    --accent: 39 54% 51%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 39 54% 51%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-luxury-ivory text-luxury-charcoal antialiased;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv02", "cv03";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-playfair text-luxury-charcoal tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-luxury-gold text-white hover:bg-luxury-bronze transition-colors px-6 py-3 rounded-md font-medium shadow-sm;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent text-luxury-gold border-2 border-luxury-gold/30 hover:border-luxury-gold hover:bg-luxury-gold/10 transition-colors px-6 py-3 rounded-md font-medium;
+  }
+
+  .btn-sticky {
+    @apply fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 px-8 py-3 text-lg font-semibold md:hidden shadow-lg;
+  }
+
+  .section {
+    @apply py-16 md:py-24 overflow-hidden;
+  }
+
+  .section-title {
+    @apply text-3xl md:text-4xl font-semibold mb-6 md:mb-8 text-luxury-charcoal;
+  }
+
+  .section-subtitle {
+    @apply text-luxury-charcoal/80 text-lg md:text-xl mb-12 max-w-3xl mx-auto;
+  }
+
+  .container {
+    @apply px-4 md:px-6 mx-auto max-w-7xl;
+  }
+}
