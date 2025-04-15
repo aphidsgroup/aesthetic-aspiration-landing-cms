@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Medal, Building, Users, GraduationCap, PlusCircle, X, Save } from 'lucide-react';
+import { supabase } from "@/lib/supabase";
 
 // Initial about section data
 const initialAboutData = {
@@ -63,26 +64,37 @@ const AboutEditor = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch about data from API
+  // Fetch about data from Supabase
   useEffect(() => {
     const fetchAboutData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/about`);
-        if (response.ok) {
-          const data = await response.json();
+        const { data, error } = await supabase
+          .from('about_content')
+          .select('content')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching about data:', error);
+          return;
+        }
+
+        if (data && data.content) {
+          const content = data.content;
           setAboutData({
-            title: data.title || initialAboutData.title,
-            subtitle: data.subtitle || initialAboutData.subtitle,
-            imageUrl: data.imageUrl || initialAboutData.imageUrl
+            title: content.title || initialAboutData.title,
+            subtitle: content.subtitle || initialAboutData.subtitle,
+            imageUrl: content.imageUrl || initialAboutData.imageUrl
           });
           
-          if (data.credentials && Array.isArray(data.credentials)) {
-            setCredentials(data.credentials);
+          if (content.credentials && Array.isArray(content.credentials)) {
+            setCredentials(content.credentials);
           }
         }
       } catch (error) {
-        console.error('Error fetching about data:', error);
+        console.error('Error in fetchAboutData:', error);
         // Fallback to initial data
       } finally {
         setIsLoading(false);
@@ -152,26 +164,22 @@ const AboutEditor = () => {
     
     try {
       // Prepare the data to save
-      const dataToSave = {
+      const aboutContent = {
         ...aboutData,
         credentials
       };
       
-      // Send to Netlify function
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/about`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(dataToSave)
-      });
+      // Save to Supabase
+      const { error } = await supabase
+        .from('about_content')
+        .insert([
+          { content: aboutContent }
+        ]);
       
-      if (response.ok) {
-        setIsEditing(false);
-        alert("About section changes saved successfully!");
-      } else {
-        throw new Error('Failed to save about section data');
-      }
+      if (error) throw error;
+      
+      setIsEditing(false);
+      alert("About section changes saved successfully!");
     } catch (error) {
       console.error('Error saving about section data:', error);
       alert("Error saving changes. Please try again.");
@@ -185,6 +193,11 @@ const AboutEditor = () => {
     return icon ? icon.component : <Medal className="h-5 w-5" />;
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // Rest of component with existing JSX from the original file
   return (
     <div>
       <Card>

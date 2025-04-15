@@ -1,0 +1,264 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { PlusCircle, X, Save, Facebook, Twitter, Instagram, Linkedin, Globe, Mail, Phone, MapPin } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+// Initial footer data (fallback)
+const initialFooterData = {
+  companyName: "Institute of Aesthetic Sciences",
+  copyrightText: "© 2023 Institute of Aesthetic Sciences. All rights reserved.",
+  tagline: "Transforming careers in aesthetic medicine with world-class education",
+  address: "123 Medical Center Boulevard, Bangalore - 560001, India",
+  email: "admissions@aestheticsciences.edu",
+  phone: "+91 1234567890",
+  footerLogo: "/logo-white.png"
+};
+
+// Initial social media links (fallback)
+const initialSocialLinks = [
+  {
+    id: 1,
+    platform: "Facebook",
+    icon: "Facebook",
+    url: "https://facebook.com/institute-aesthetic-sciences"
+  },
+  {
+    id: 2,
+    platform: "Instagram",
+    icon: "Instagram",
+    url: "https://instagram.com/aesthetic_sciences"
+  }
+];
+
+// Initial quick links (fallback)
+const initialQuickLinks = [
+  { id: 1, label: "Courses", url: "/courses" },
+  { id: 2, label: "About Us", url: "/about" }
+];
+
+// Available social icon options
+const socialIconOptions = [
+  { value: "Facebook", label: "Facebook", component: <Facebook className="h-5 w-5" /> },
+  { value: "Twitter", label: "Twitter", component: <Twitter className="h-5 w-5" /> },
+  { value: "Instagram", label: "Instagram", component: <Instagram className="h-5 w-5" /> },
+  { value: "Linkedin", label: "LinkedIn", component: <Linkedin className="h-5 w-5" /> },
+  { value: "Globe", label: "Website", component: <Globe className="h-5 w-5" /> }
+];
+
+const FooterEditor = () => {
+  const [footerData, setFooterData] = useState(initialFooterData);
+  const [socialLinks, setSocialLinks] = useState(initialSocialLinks);
+  const [quickLinks, setQuickLinks] = useState(initialQuickLinks);
+  const [newSocialLink, setNewSocialLink] = useState({
+    platform: "",
+    icon: "Facebook",
+    url: ""
+  });
+  const [newQuickLink, setNewQuickLink] = useState({
+    label: "",
+    url: ""
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch data from Supabase
+  useEffect(() => {
+    async function fetchFooterData() {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from('footer_content')
+          .select('content')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error('Error fetching footer data:', error);
+          return;
+        }
+
+        if (data && data.content) {
+          const content = data.content;
+          setFooterData({
+            companyName: content.companyName || initialFooterData.companyName,
+            copyrightText: content.copyrightText || initialFooterData.copyrightText,
+            tagline: content.tagline || initialFooterData.tagline,
+            address: content.address || initialFooterData.address,
+            email: content.email || initialFooterData.email,
+            phone: content.phone || initialFooterData.phone,
+            footerLogo: content.footerLogo || initialFooterData.footerLogo
+          });
+          
+          if (content.socialLinks && Array.isArray(content.socialLinks)) {
+            setSocialLinks(content.socialLinks);
+          }
+          
+          if (content.quickLinks && Array.isArray(content.quickLinks)) {
+            setQuickLinks(content.quickLinks);
+          }
+        }
+      } catch (error) {
+        console.error('Error in fetchFooterData:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchFooterData();
+  }, []);
+
+  const handleFooterDataChange = (e) => {
+    const { name, value } = e.target;
+    setFooterData({
+      ...footerData,
+      [name]: value
+    });
+  };
+
+  const handleSocialLinkChange = (e, id = null) => {
+    const { name, value } = e.target;
+    
+    if (id) {
+      // Edit existing social link
+      setSocialLinks(socialLinks.map(link => 
+        link.id === id ? { ...link, [name]: value } : link
+      ));
+    } else {
+      // New social link
+      setNewSocialLink({
+        ...newSocialLink,
+        [name]: value
+      });
+    }
+  };
+
+  const handleQuickLinkChange = (e, id = null) => {
+    const { name, value } = e.target;
+    
+    if (id) {
+      // Edit existing quick link
+      setQuickLinks(quickLinks.map(link => 
+        link.id === id ? { ...link, [name]: value } : link
+      ));
+    } else {
+      // New quick link
+      setNewQuickLink({
+        ...newQuickLink,
+        [name]: value
+      });
+    }
+  };
+
+  const addSocialLink = () => {
+    if (!newSocialLink.platform || !newSocialLink.url) return;
+    
+    const newId = Math.max(0, ...socialLinks.map(link => link.id)) + 1;
+    
+    setSocialLinks([
+      ...socialLinks,
+      {
+        id: newId,
+        ...newSocialLink
+      }
+    ]);
+    
+    // Reset form
+    setNewSocialLink({
+      platform: "",
+      icon: "Facebook",
+      url: ""
+    });
+  };
+
+  const addQuickLink = () => {
+    if (!newQuickLink.label || !newQuickLink.url) return;
+    
+    const newId = Math.max(0, ...quickLinks.map(link => link.id)) + 1;
+    
+    setQuickLinks([
+      ...quickLinks,
+      {
+        id: newId,
+        ...newQuickLink
+      }
+    ]);
+    
+    // Reset form
+    setNewQuickLink({
+      label: "",
+      url: ""
+    });
+  };
+
+  const removeSocialLink = (id) => {
+    setSocialLinks(socialLinks.filter(link => link.id !== id));
+  };
+
+  const removeQuickLink = (id) => {
+    setQuickLinks(quickLinks.filter(link => link.id !== id));
+  };
+
+  const saveChanges = async () => {
+    setIsSaving(true);
+    
+    try {
+      const footerContent = {
+        ...footerData,
+        socialLinks,
+        quickLinks
+      };
+      
+      // Save to Supabase
+      const { error } = await supabase
+        .from('footer_content')
+        .insert([
+          { content: footerContent }
+        ]);
+      
+      if (error) throw error;
+      
+      setIsEditing(false);
+      alert("Footer changes saved successfully!");
+    } catch (error) {
+      console.error('Error saving footer content:', error);
+      alert("Error saving changes. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getSocialIconComponent = (iconName) => {
+    const icon = socialIconOptions.find(option => option.value === iconName);
+    return icon ? icon.component : <Globe className="h-5 w-5" />;
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Footer Content</CardTitle>
+          <CardDescription>
+            Edit the content that appears in your website footer
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {/* Rest of your component JSX stays the same */}
+          {/* ... */}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default FooterEditor;
