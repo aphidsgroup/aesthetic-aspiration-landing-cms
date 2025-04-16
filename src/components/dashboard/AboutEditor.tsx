@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -15,6 +15,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Icons } from "@/components/ui/icons";
+import { createClient } from '@supabase/supabase-js';
+
+// Extend Window interface to include supabase
+declare global {
+  interface Window {
+    supabase: any;
+  }
+}
 
 // Initial data (would come from API in production)
 const initialData = {
@@ -60,10 +68,67 @@ export const AboutEditor = () => {
   const [data, setData] = useState(initialData);
   const [editingCredential, setEditingCredential] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSave = () => {
-    // In a real application, you would save to an API
-    alert("Changes saved successfully!");
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Try to load from Supabase
+        if (window.supabase) {
+          const { data: supabaseData, error } = await window.supabase
+            .from('content')
+            .select('*')
+            .eq('type', 'about')
+            .single();
+            
+          if (supabaseData?.content && !error) {
+            setData(supabaseData.content);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
+        // Fall back to localStorage
+        const savedData = localStorage.getItem('aboutData');
+        if (savedData) {
+          setData(JSON.parse(savedData));
+        }
+      } catch (error) {
+        console.error("Error loading data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      // Always save to localStorage as fallback
+      localStorage.setItem('aboutData', JSON.stringify(data));
+      
+      // Try to save to Supabase
+      if (window.supabase) {
+        await window.supabase
+          .from('content')
+          .upsert({
+            type: 'about',
+            content: data
+          }, { onConflict: 'type' });
+      }
+      
+      alert("Changes saved successfully!");
+    } catch (error) {
+      console.error("Error saving data:", error);
+      alert("Changes saved to local storage only");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

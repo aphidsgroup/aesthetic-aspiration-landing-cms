@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -15,269 +15,437 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Icons } from "@/components/ui/icons";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Globe, UserCheck, Award, Briefcase, Users, BookOpen, Trash2, Edit, Plus } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
-// Initial data (would come from API in production)
-const initialData = {
+// Default data if nothing is loaded
+const defaultData = {
   title: "Why Choose Us",
-  subtitle: "Features that make our institute stand out",
+  subtitle: "Our institute stands out through excellence in training, international recognition, and a commitment to producing highly skilled aesthetic medicine professionals",
+  tagline: "Join over 5000+ successful alumni from 32 countries",
   features: [
     {
-      id: 1,
-      icon: "GraduationCap",
-      title: "Internationally Recognized Curriculum",
-      description: "Our curriculum is designed in line with global industry standards, ensuring our graduates are recognized worldwide."
+      icon: "Globe",
+      title: 'Internationally Recognized Curriculum',
+      description: 'Our curriculum meets international standards and is recognized by aesthetic medicine bodies worldwide'
     },
     {
-      id: 2,
+      icon: "UserCheck",
+      title: 'Hands-On Live Model Training',
+      description: 'Gain practical experience through extensive hands-on training with real patients under expert supervision'
+    },
+    {
+      icon: "Award",
+      title: 'Expert Cosmetic Surgeons as Trainers',
+      description: 'Learn directly from practicing cosmetic surgeons with decades of clinical and teaching experience'
+    },
+    {
       icon: "Briefcase",
-      title: "Hands-on Training",
-      description: "Practical experience is at the core of our teaching methodology, with 70% of course time dedicated to hands-on training."
+      title: 'Career Placement Assistance',
+      description: 'Receive comprehensive support for clinic placements both in India and internationally'
     },
     {
-      id: 3,
       icon: "Users",
-      title: "Expert Trainers",
-      description: "Learn from industry professionals with over 15 years of experience in leading aesthetic clinics and medical centers."
+      title: 'Limited Seats Per Batch',
+      description: 'Small batch sizes ensure personalized attention and optimal learning experience for every student'
     },
     {
-      id: 4,
-      icon: "Headphones",
-      title: "Career Placement Assistance",
-      description: "Our dedicated placement cell connects students with top clinics and medical centers across the country."
-    },
-    {
-      id: 5,
-      icon: "Users",
-      title: "Limited Batch Size",
-      description: "Small batch sizes ensure personalized attention and a focused learning environment for each student."
-    },
-    {
-      id: 6,
       icon: "BookOpen",
-      title: "Comprehensive Learning Materials",
-      description: "Receive detailed course manuals, digital resources, and lifetime access to our online learning portal."
+      title: 'Comprehensive Learning Materials',
+      description: 'Access to exclusive textbooks, digital resources, and ongoing learning opportunities'
     }
   ]
 };
 
-// Available icon options
-const iconOptions = [
-  "GraduationCap", "Briefcase", "Users", "Headphones", "BookOpen", 
-  "Award", "Clock", "Heart", "Shield", "Star", "Zap"
-];
+// Icon mapping for preview
+const IconMap = {
+  Globe: <Globe className="h-5 w-5 text-primary" />,
+  UserCheck: <UserCheck className="h-5 w-5 text-primary" />,
+  Award: <Award className="h-5 w-5 text-primary" />,
+  Briefcase: <Briefcase className="h-5 w-5 text-primary" />,
+  Users: <Users className="h-5 w-5 text-primary" />,
+  BookOpen: <BookOpen className="h-5 w-5 text-primary" />
+};
 
 export const WhyUsEditor = () => {
-  const [data, setData] = useState(initialData);
-  const [editingFeature, setEditingFeature] = useState<any>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [data, setData] = useState(defaultData);
+  const [isLoading, setIsLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<null | 'saving' | 'success' | 'error'>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentFeature, setCurrentFeature] = useState<any>(null);
+  const [editIndex, setEditIndex] = useState<number | null>(null);
 
-  const handleSave = () => {
-    // In a real application, you would save to an API
-    alert("Changes saved successfully!");
+  // Icons available for selection
+  const availableIcons = [
+    { name: "Globe", label: "Globe" },
+    { name: "UserCheck", label: "User Check" },
+    { name: "Award", label: "Award" },
+    { name: "Briefcase", label: "Briefcase" },
+    { name: "Users", label: "Users" },
+    { name: "BookOpen", label: "Book Open" }
+  ];
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        // Try to get data from localStorage first
+        const localData = localStorage.getItem('whyUsData');
+        if (localData) {
+          setData(JSON.parse(localData));
+        } else {
+          // If not in localStorage, try Supabase
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
+          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          const { data: whyUsData, error } = await supabase
+            .from('content')
+            .select('*')
+            .eq('section', 'whyus')
+            .single();
+            
+          if (!error && whyUsData) {
+            setData(whyUsData.content);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading Why Choose Us data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
+
+  const handleDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({ ...data, title: e.target.value });
+  const handleSave = async () => {
+    setSaveStatus('saving');
+    try {
+      // Save to localStorage
+      localStorage.setItem('whyUsData', JSON.stringify(data));
+      
+      // Save to Supabase if available
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const { error } = await supabase
+          .from('content')
+          .upsert(
+            { section: 'whyus', content: data },
+            { onConflict: 'section' }
+          );
+          
+        if (error) {
+          console.error('Supabase save error:', error);
+        }
+      } catch (err) {
+        console.error('Error saving to Supabase:', err);
+        // Not treating this as a complete failure if localStorage worked
+      }
+      
+      setSaveStatus('success');
+      setTimeout(() => setSaveStatus(null), 3000);
+    } catch (error) {
+      console.error('Error saving data:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus(null), 3000);
+    }
   };
 
-  const handleSubtitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({ ...data, subtitle: e.target.value });
-  };
-
-  const handleFeatureEdit = (feature: any) => {
-    setEditingFeature({ ...feature });
-    setIsDialogOpen(true);
-  };
-
-  const handleFeatureAdd = () => {
-    const newId = Math.max(0, ...data.features.map(f => f.id)) + 1;
-    setEditingFeature({
-      id: newId,
-      icon: "Star",
+  const openNewFeatureDialog = () => {
+    setCurrentFeature({
+      icon: "Globe",
       title: "",
       description: ""
     });
-    setIsDialogOpen(true);
+    setEditIndex(null);
+    setDialogOpen(true);
   };
 
-  const handleFeatureDelete = (id: number) => {
-    setData({
-      ...data,
-      features: data.features.filter(feature => feature.id !== id)
-    });
+  const openEditFeatureDialog = (feature: any, index: number) => {
+    setCurrentFeature({ ...feature });
+    setEditIndex(index);
+    setDialogOpen(true);
   };
 
-  const handleFeatureSave = () => {
-    if (editingFeature) {
-      const updatedFeatures = editingFeature.id
-        ? data.features.map(f => f.id === editingFeature.id ? editingFeature : f)
-        : [...data.features, editingFeature];
-      
-      setData({
-        ...data,
-        features: updatedFeatures
-      });
+  const handleFeatureChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setCurrentFeature(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleIconChange = (icon: string) => {
+    setCurrentFeature(prev => ({
+      ...prev,
+      icon
+    }));
+  };
+
+  const saveFeature = () => {
+    const updatedFeatures = [...data.features];
+    
+    if (editIndex !== null) {
+      // Edit existing feature
+      updatedFeatures[editIndex] = currentFeature;
+    } else {
+      // Add new feature
+      updatedFeatures.push(currentFeature);
     }
-    setIsDialogOpen(false);
+    
+    setData(prev => ({
+      ...prev,
+      features: updatedFeatures
+    }));
+    
+    setDialogOpen(false);
   };
 
-  const renderIconOption = (iconName: string) => {
-    const IconComponent = (Icons as any)[iconName];
-    return IconComponent ? <IconComponent className="h-5 w-5" /> : <div className="h-5 w-5" />;
+  const deleteFeature = (index: number) => {
+    const updatedFeatures = data.features.filter((_, i) => i !== index);
+    setData(prev => ({
+      ...prev,
+      features: updatedFeatures
+    }));
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <Card className="col-span-3">
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Why Choose Us Section</CardTitle>
+        <CardTitle>Why Choose Us Section Editor</CardTitle>
         <CardDescription>
-          Edit the content for the "Why Choose Us" section of your website
+          Edit the content displayed in the Why Choose Us section of your website
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="content">
-          <TabsList>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
+          <TabsList className="mb-4">
+            <TabsTrigger value="content">Content Editor</TabsTrigger>
+            <TabsTrigger value="preview">Content Preview</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="content" className="space-y-4">
-            <div className="grid gap-4">
-              <div className="grid gap-2">
+          <TabsContent value="content" className="space-y-6">
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="title">Section Title</Label>
                 <Input 
                   id="title" 
+                  name="title" 
                   value={data.title} 
-                  onChange={handleTitleChange}
+                  onChange={handleDataChange} 
                 />
               </div>
               
-              <div className="grid gap-2">
+              <div>
                 <Label htmlFor="subtitle">Section Subtitle</Label>
-                <Input 
+                <Textarea 
                   id="subtitle" 
+                  name="subtitle" 
                   value={data.subtitle} 
-                  onChange={handleSubtitleChange}
+                  onChange={handleDataChange} 
+                  className="min-h-[80px]"
                 />
               </div>
               
-              <div className="border rounded-md p-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Features</h3>
-                  <Button onClick={handleFeatureAdd} size="sm">Add Feature</Button>
+              <div>
+                <Label htmlFor="tagline">Tagline (Bottom)</Label>
+                <Input 
+                  id="tagline" 
+                  name="tagline" 
+                  value={data.tagline} 
+                  onChange={handleDataChange} 
+                />
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <Label>Features</Label>
+                  <Button variant="outline" size="sm" onClick={openNewFeatureDialog}>
+                    <Plus className="h-4 w-4 mr-1" /> Add Feature
+                  </Button>
                 </div>
                 
-                <ScrollArea className="h-[400px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Icon</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Actions</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Icon</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.features.map((feature, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-aesthetic-lavender/30">
+                            {IconMap[feature.icon as keyof typeof IconMap]}
+                          </div>
+                        </TableCell>
+                        <TableCell>{feature.title}</TableCell>
+                        <TableCell className="max-w-[300px] truncate">{feature.description}</TableCell>
+                        <TableCell>
+                          <div className="flex space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => openEditFeatureDialog(feature, index)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => deleteFeature(index)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.features.map(feature => (
-                        <TableRow key={feature.id}>
-                          <TableCell>
-                            {renderIconOption(feature.icon)}
-                          </TableCell>
-                          <TableCell className="font-medium">{feature.title}</TableCell>
-                          <TableCell className="max-w-[300px] truncate">{feature.description}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={() => handleFeatureEdit(feature)}>Edit</Button>
-                              <Button variant="destructive" size="sm" onClick={() => handleFeatureDelete(feature.id)}>Delete</Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </ScrollArea>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button onClick={handleSave}>Save Changes</Button>
+              
+              <div className="flex justify-end mt-6">
+                <Button onClick={handleSave} disabled={saveStatus === 'saving'}>
+                  {saveStatus === 'saving' ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </div>
+              
+              {saveStatus === 'success' && (
+                <Alert className="bg-green-50 border-green-200">
+                  <AlertDescription className="text-green-800">
+                    Changes saved successfully!
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {saveStatus === 'error' && (
+                <Alert className="bg-red-50 border-red-200">
+                  <AlertDescription className="text-red-800">
+                    Error saving changes. Please try again.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </TabsContent>
           
-          <TabsContent value="preview" className="border rounded-md p-4">
-            <h2 className="text-3xl font-bold text-center mb-2">{data.title}</h2>
-            <p className="text-lg text-muted-foreground text-center mb-8">{data.subtitle}</p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {data.features.map(feature => {
-                const IconComponent = (Icons as any)[feature.icon];
-                return (
-                  <div key={feature.id} className="border rounded-lg p-6 space-y-4">
-                    <div className="bg-primary h-12 w-12 rounded-full flex items-center justify-center">
-                      {IconComponent && <IconComponent className="h-6 w-6 text-primary-foreground" />}
+          <TabsContent value="preview">
+            <div className="border rounded-lg p-6 bg-aesthetic-lavender/10">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold mb-2">{data.title}</h2>
+                <p className="text-muted-foreground">{data.subtitle}</p>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {data.features.map((feature, index) => (
+                  <div key={index} className="flex gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-aesthetic-lavender/30">
+                      {IconMap[feature.icon as keyof typeof IconMap]}
                     </div>
-                    <h3 className="text-xl font-semibold">{feature.title}</h3>
-                    <p className="text-muted-foreground">{feature.description}</p>
+                    <div>
+                      <h3 className="text-md font-medium mb-1">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
                   </div>
-                );
-              })}
+                ))}
+              </div>
+              
+              <div className="mt-8 text-center">
+                <div className="inline-block px-4 py-2 rounded-full bg-accent text-accent-foreground text-sm font-medium">
+                  {data.tagline}
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
-        
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingFeature?.id ? 'Edit Feature' : 'Add Feature'}</DialogTitle>
-            </DialogHeader>
-            
-            {editingFeature && (
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="feature-icon">Icon</Label>
-                  <div className="grid grid-cols-6 gap-2">
-                    {iconOptions.map(icon => (
-                      <Button
-                        key={icon}
-                        type="button"
-                        variant={editingFeature.icon === icon ? "default" : "outline"}
-                        className="h-10 w-10 p-0"
-                        onClick={() => setEditingFeature({ ...editingFeature, icon })}
-                      >
-                        {renderIconOption(icon)}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="feature-title">Title</Label>
-                  <Input
-                    id="feature-title"
-                    value={editingFeature.title}
-                    onChange={e => setEditingFeature({ ...editingFeature, title: e.target.value })}
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <Label htmlFor="feature-description">Description</Label>
-                  <Textarea
-                    id="feature-description"
-                    value={editingFeature.description}
-                    onChange={e => setEditingFeature({ ...editingFeature, description: e.target.value })}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleFeatureSave}>Save</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </CardContent>
+      
+      {/* Dialog for adding/editing features */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editIndex !== null ? "Edit Feature" : "Add New Feature"}</DialogTitle>
+            <DialogDescription>
+              {editIndex !== null 
+                ? "Update the details of this feature" 
+                : "Fill in the details for the new feature"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="feature-icon">Icon</Label>
+              <Select 
+                value={currentFeature?.icon || "Globe"} 
+                onValueChange={handleIconChange}
+              >
+                <SelectTrigger id="feature-icon">
+                  <SelectValue placeholder="Select an icon" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableIcons.map(icon => (
+                    <SelectItem key={icon.name} value={icon.name}>
+                      <div className="flex items-center gap-2">
+                        {IconMap[icon.name as keyof typeof IconMap]}
+                        <span>{icon.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label htmlFor="feature-title">Title</Label>
+              <Input 
+                id="feature-title" 
+                name="title" 
+                value={currentFeature?.title || ""} 
+                onChange={handleFeatureChange} 
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="feature-description">Description</Label>
+              <Textarea 
+                id="feature-description" 
+                name="description" 
+                value={currentFeature?.description || ""} 
+                onChange={handleFeatureChange} 
+                className="min-h-[100px]"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+            <Button onClick={saveFeature}>{editIndex !== null ? "Update" : "Add"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
+
+export default WhyUsEditor;
