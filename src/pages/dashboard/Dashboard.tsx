@@ -5,9 +5,9 @@ import CourseEditor from '@/components/dashboard/CourseEditor';
 import TestimonialEditor from '@/components/dashboard/TestimonialEditor';
 import FormEditor from '@/components/dashboard/FormEditor';
 import BrochureUpload from '@/components/dashboard/BrochureUpload';
-import * as AboutEditorModule from '@/components/dashboard/AboutEditor';
-import * as WhyUsEditorModule from '@/components/dashboard/WhyUsEditor';
-import * as FaqEditorModule from '@/components/dashboard/FaqEditor';
+import { AboutEditor } from '@/components/dashboard/AboutEditor';
+import { WhyUsEditor } from '@/components/dashboard/WhyUsEditor';
+import { FaqEditor } from '@/components/dashboard/FaqEditor';
 import FooterEditor from '@/components/dashboard/FooterEditor';
 import EnquiriesTable from '@/components/dashboard/EnquiriesTable';
 import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
@@ -174,13 +174,13 @@ const Dashboard = () => {
                 <TestimonialEditor />
               </TabsContent>
               <TabsContent value="about" className="mt-4">
-                <AboutEditorModule.AboutEditor />
+                <AboutEditor />
               </TabsContent>
               <TabsContent value="whyus" className="mt-4">
-                <WhyUsEditorModule.WhyUsEditor />
+                <WhyUsEditor />
               </TabsContent>
               <TabsContent value="faq" className="mt-4">
-                <FaqEditorModule.FaqEditor />
+                <FaqEditor />
               </TabsContent>
               <TabsContent value="footer" className="mt-4">
                 <FooterEditor />
