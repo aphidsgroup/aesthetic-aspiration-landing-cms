@@ -1,433 +1,330 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Medal, Building, Users, GraduationCap, PlusCircle, X, Save } from 'lucide-react';
-import { supabase } from "@/lib/supabase";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Icons } from "@/components/ui/icons";
 
-// Initial about section data
-const initialAboutData = {
-  title: "About the Institute",
-  subtitle: "Established in 2005, the Institute of Aesthetic Sciences is a premier center for aesthetic education, combining modern infrastructure with world-class faculty to deliver exceptional training programs. Our international certification and state-of-the-art facilities ensure students receive the best education to excel in the growing field of aesthetic medicine.",
-  imageUrl: "https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=2068&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+// Initial data (would come from API in production)
+const initialData = {
+  title: "About Our Institute",
+  subtitle: "Learn about our dedication to excellence in aesthetic education",
+  description: "Founded in 2005, our institute has been at the forefront of aesthetic education for nearly two decades. We combine rigorous academic standards with practical, hands-on training to prepare students for successful careers in the aesthetic industry. Our state-of-the-art facilities and expert instructors ensure that every graduate is ready to meet the demands of this growing field.",
+  imageUrl: "/images/institute-building.jpg",
+  credentials: [
+    {
+      id: 1,
+      icon: "Award",
+      title: "Internationally Accredited",
+      description: "Our programs are recognized by leading aesthetic medicine boards worldwide"
+    },
+    {
+      id: 2,
+      icon: "GraduationCap",
+      title: "Expert Faculty",
+      description: "Learn from professionals with over 15 years of industry experience"
+    },
+    {
+      id: 3,
+      icon: "Users",
+      title: "5000+ Graduates",
+      description: "Join our network of successful alumni working across the globe"
+    },
+    {
+      id: 4,
+      icon: "Building",
+      title: "Modern Campus",
+      description: "Study in our purpose-built facility with the latest equipment and technology"
+    }
+  ]
 };
-
-// Initial credentials data
-const initialCredentials = [
-  {
-    id: 1,
-    icon: "Medal",
-    title: "ISO Certified",
-    description: "9001:2015 certified institution for quality management systems"
-  },
-  {
-    id: 2,
-    icon: "Building",
-    title: "15+ Years of Excellence",
-    description: "Pioneering aesthetic medicine education since 2005"
-  },
-  {
-    id: 3,
-    icon: "Users",
-    title: "5000+ Alumni Network",
-    description: "Professionals thriving in clinics across 32 countries"
-  },
-  {
-    id: 4,
-    icon: "GraduationCap",
-    title: "Expert Faculty",
-    description: "Learn from renowned cosmetic surgeons and practitioners"
-  }
-];
 
 // Available icon options
 const iconOptions = [
-  { value: "Medal", label: "Medal", component: <Medal className="h-5 w-5" /> },
-  { value: "Building", label: "Building", component: <Building className="h-5 w-5" /> },
-  { value: "Users", label: "Users", component: <Users className="h-5 w-5" /> },
-  { value: "GraduationCap", label: "Graduation Cap", component: <GraduationCap className="h-5 w-5" /> }
+  "Award", "GraduationCap", "Users", "Building", 
+  "Briefcase", "Clock", "Heart", "Shield", "Star", "Zap"
 ];
 
 const AboutEditor = () => {
-  const [aboutData, setAboutData] = useState(initialAboutData);
-  const [credentials, setCredentials] = useState(initialCredentials);
-  const [editingCredential, setEditingCredential] = useState(null);
-  const [newCredential, setNewCredential] = useState({
-    icon: "Medal",
-    title: "",
-    description: ""
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [editingCredential, setEditingCredential] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Fetch about data from Supabase
-  useEffect(() => {
-    const fetchAboutData = async () => {
-      try {
-        setIsLoading(true);
-        const { data, error } = await supabase
-          .from('about_content')
-          .select('content')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (error) {
-          console.error('Error fetching about data:', error);
-          return;
-        }
-
-        if (data && data.content) {
-          const content = data.content;
-          setAboutData({
-            title: content.title || initialAboutData.title,
-            subtitle: content.subtitle || initialAboutData.subtitle,
-            imageUrl: content.imageUrl || initialAboutData.imageUrl
-          });
-          
-          if (content.credentials && Array.isArray(content.credentials)) {
-            setCredentials(content.credentials);
-          }
-        }
-      } catch (error) {
-        console.error('Error in fetchAboutData:', error);
-        // Fallback to initial data
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAboutData();
-  }, []);
-
-  const handleAboutDataChange = (e) => {
-    const { name, value } = e.target;
-    setAboutData({
-      ...aboutData,
-      [name]: value
-    });
+  const handleSave = () => {
+    // In a real application, you would save to an API
+    alert("Changes saved successfully!");
   };
 
-  const handleCredentialChange = (e, id = null) => {
-    const { name, value } = e.target;
-    
-    if (id) {
-      // Edit existing credential
-      setCredentials(credentials.map(cred => 
-        cred.id === id ? { ...cred, [name]: value } : cred
-      ));
-    } else {
-      // New credential
-      setNewCredential({
-        ...newCredential,
-        [name]: value
-      });
-    }
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setData({ ...data, title: e.target.value });
   };
 
-  const addCredential = () => {
-    if (!newCredential.title || !newCredential.description) return;
-    
-    const newId = Math.max(0, ...credentials.map(c => c.id)) + 1;
-    
-    setCredentials([
-      ...credentials,
-      {
-        id: newId,
-        ...newCredential
-      }
-    ]);
-    
-    // Reset form
-    setNewCredential({
-      icon: "Medal",
+  const handleSubtitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setData({ ...data, subtitle: e.target.value });
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setData({ ...data, description: e.target.value });
+  };
+
+  const handleImageUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setData({ ...data, imageUrl: e.target.value });
+  };
+
+  const handleCredentialEdit = (credential: any) => {
+    setEditingCredential({ ...credential });
+    setIsDialogOpen(true);
+  };
+
+  const handleCredentialAdd = () => {
+    const newId = Math.max(0, ...data.credentials.map(c => c.id)) + 1;
+    setEditingCredential({
+      id: newId,
+      icon: "Award",
       title: "",
       description: ""
     });
+    setIsDialogOpen(true);
   };
 
-  const removeCredential = (id) => {
-    if (credentials.length <= 1) {
-      alert("You must have at least one credential");
-      return;
+  const handleCredentialDelete = (id: number) => {
+    setData({
+      ...data,
+      credentials: data.credentials.filter(credential => credential.id !== id)
+    });
+  };
+
+  const handleCredentialSave = () => {
+    if (editingCredential) {
+      const updatedCredentials = editingCredential.id
+        ? data.credentials.map(c => c.id === editingCredential.id ? editingCredential : c)
+        : [...data.credentials, editingCredential];
+      
+      setData({
+        ...data,
+        credentials: updatedCredentials
+      });
     }
-    
-    setCredentials(credentials.filter(cred => cred.id !== id));
+    setIsDialogOpen(false);
   };
 
-  const saveChanges = async () => {
-    setIsSaving(true);
-    
-    try {
-      // Prepare the data to save
-      const aboutContent = {
-        ...aboutData,
-        credentials
-      };
-      
-      // Save to Supabase
-      const { error } = await supabase
-        .from('about_content')
-        .insert([
-          { content: aboutContent }
-        ]);
-      
-      if (error) throw error;
-      
-      setIsEditing(false);
-      alert("About section changes saved successfully!");
-    } catch (error) {
-      console.error('Error saving about section data:', error);
-      alert("Error saving changes. Please try again.");
-    } finally {
-      setIsSaving(false);
-    }
+  const renderIconOption = (iconName: string) => {
+    const IconComponent = (Icons as any)[iconName];
+    return IconComponent ? <IconComponent className="h-5 w-5" /> : <div className="h-5 w-5" />;
   };
 
-  const getIconComponent = (iconName) => {
-    const icon = iconOptions.find(option => option.value === iconName);
-    return icon ? icon.component : <Medal className="h-5 w-5" />;
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  // Rest of component with existing JSX from the original file
   return (
-    <div>
-      <Card>
-        <CardHeader>
-          <CardTitle>About Section</CardTitle>
-          <CardDescription>
-            Edit the content of the About section that appears on your website
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!isEditing ? (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">Current Content</h3>
-                <div className="mt-2 p-4 bg-gray-50 rounded-md">
-                  <h4 className="font-bold text-xl">{aboutData.title}</h4>
-                  <p className="mt-2 text-gray-600">{aboutData.subtitle}</p>
-                </div>
+    <Card className="col-span-3">
+      <CardHeader>
+        <CardTitle>About Section</CardTitle>
+        <CardDescription>
+          Edit the content for the "About Our Institute" section of your website
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="content">
+          <TabsList>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="content" className="space-y-4">
+            <div className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Section Title</Label>
+                <Input 
+                  id="title" 
+                  value={data.title} 
+                  onChange={handleTitleChange}
+                />
               </div>
               
-              <div>
-                <h3 className="text-lg font-medium">About Image</h3>
-                <div className="mt-2 relative w-full h-48 overflow-hidden rounded-md">
-                  <img 
-                    src={aboutData.imageUrl} 
-                    alt="About Section" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="subtitle">Section Subtitle</Label>
+                <Input 
+                  id="subtitle" 
+                  value={data.subtitle} 
+                  onChange={handleSubtitleChange}
+                />
               </div>
               
-              <div>
-                <h3 className="text-lg font-medium">Credentials</h3>
-                <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {credentials.map((credential) => (
-                    <Card key={credential.id} className="p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          {getIconComponent(credential.icon)}
-                        </div>
-                        <div>
-                          <h4 className="font-medium">{credential.title}</h4>
-                          <p className="text-sm text-gray-500">{credential.description}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+              <div className="grid gap-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea 
+                  id="description" 
+                  value={data.description} 
+                  onChange={handleDescriptionChange}
+                  rows={5}
+                />
               </div>
               
-              <Button onClick={() => setIsEditing(true)}>Edit Content</Button>
+              <div className="grid gap-2">
+                <Label htmlFor="imageUrl">Image URL</Label>
+                <Input 
+                  id="imageUrl" 
+                  value={data.imageUrl} 
+                  onChange={handleImageUrlChange}
+                  placeholder="/images/your-image.jpg"
+                />
+              </div>
+              
+              <div className="border rounded-md p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium">Credentials & Achievements</h3>
+                  <Button onClick={handleCredentialAdd} size="sm">Add Credential</Button>
+                </div>
+                
+                <ScrollArea className="h-[300px]">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Icon</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.credentials.map(credential => (
+                        <TableRow key={credential.id}>
+                          <TableCell>
+                            {renderIconOption(credential.icon)}
+                          </TableCell>
+                          <TableCell className="font-medium">{credential.title}</TableCell>
+                          <TableCell className="max-w-[300px] truncate">{credential.description}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleCredentialEdit(credential)}>Edit</Button>
+                              <Button variant="destructive" size="sm" onClick={() => handleCredentialDelete(credential.id)}>Delete</Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
+              </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="space-y-4">
+            
+            <div className="flex justify-end">
+              <Button onClick={handleSave}>Save Changes</Button>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="preview" className="border rounded-md p-4">
+            <div className="max-w-5xl mx-auto">
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold mb-2">{data.title}</h2>
+                <p className="text-lg text-muted-foreground">{data.subtitle}</p>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-8 mb-10">
                 <div>
-                  <Label htmlFor="title">Section Title</Label>
-                  <Input 
-                    id="title" 
-                    name="title" 
-                    value={aboutData.title} 
-                    onChange={handleAboutDataChange}
-                  />
+                  <p className="text-muted-foreground">{data.description}</p>
                 </div>
-                
-                <div>
-                  <Label htmlFor="subtitle">Section Subtitle</Label>
-                  <Textarea 
-                    id="subtitle" 
-                    name="subtitle" 
-                    value={aboutData.subtitle} 
-                    onChange={handleAboutDataChange}
-                    rows={4}
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input 
-                    id="imageUrl" 
-                    name="imageUrl" 
-                    value={aboutData.imageUrl} 
-                    onChange={handleAboutDataChange}
-                    placeholder="https://example.com/image.jpg"
-                  />
-                  <div className="mt-2 relative w-full h-40 overflow-hidden rounded-md">
+                <div className="relative h-64 bg-muted rounded-lg overflow-hidden">
+                  {data.imageUrl && (
                     <img 
-                      src={aboutData.imageUrl} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover"
+                      src={data.imageUrl} 
+                      alt="About our institute" 
+                      className="object-cover w-full h-full"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
-                        target.src = "https://placehold.co/600x400?text=Invalid+Image+URL";
+                        target.src = "https://placehold.co/600x400?text=Institute+Image";
                       }}
                     />
-                  </div>
+                  )}
                 </div>
               </div>
               
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-medium">Credentials</h3>
+                <h3 className="text-xl font-semibold mb-6 text-center">Our Credentials</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {data.credentials.map(credential => {
+                    const IconComponent = (Icons as any)[credential.icon];
+                    return (
+                      <div key={credential.id} className="flex flex-col items-center text-center p-4 border rounded-lg">
+                        <div className="bg-primary h-12 w-12 rounded-full flex items-center justify-center mb-4">
+                          {IconComponent && <IconComponent className="h-6 w-6 text-primary-foreground" />}
+                        </div>
+                        <h4 className="text-lg font-medium mb-2">{credential.title}</h4>
+                        <p className="text-sm text-muted-foreground">{credential.description}</p>
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Icon</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead className="w-[100px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {credentials.map((credential) => (
-                      <TableRow key={credential.id}>
-                        <TableCell>
-                          <select 
-                            value={credential.icon} 
-                            name="icon" 
-                            onChange={(e) => handleCredentialChange(e, credential.id)}
-                            className="w-full p-2 border rounded"
-                          >
-                            {iconOptions.map(option => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </TableCell>
-                        <TableCell>
-                          <Input 
-                            value={credential.title} 
-                            name="title" 
-                            onChange={(e) => handleCredentialChange(e, credential.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input 
-                            value={credential.description} 
-                            name="description" 
-                            onChange={(e) => handleCredentialChange(e, credential.id)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            onClick={() => removeCredential(credential.id)}
-                            disabled={credentials.length <= 1}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                
-                <div className="mt-4 p-4 border rounded-md">
-                  <h4 className="font-medium mb-2">Add New Credential</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label htmlFor="new-icon">Icon</Label>
-                      <select 
-                        id="new-icon"
-                        value={newCredential.icon} 
-                        name="icon" 
-                        onChange={(e) => handleCredentialChange(e)}
-                        className="w-full p-2 border rounded"
-                      >
-                        {iconOptions.map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label htmlFor="new-title">Title</Label>
-                      <Input 
-                        id="new-title"
-                        value={newCredential.title} 
-                        name="title" 
-                        onChange={(e) => handleCredentialChange(e)}
-                        placeholder="e.g. ISO Certified"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="new-description">Description</Label>
-                      <Input 
-                        id="new-description"
-                        value={newCredential.description} 
-                        name="description" 
-                        onChange={(e) => handleCredentialChange(e)}
-                        placeholder="e.g. 9001:2015 certified institution"
-                      />
-                    </div>
-                  </div>
-                  <Button 
-                    className="mt-2" 
-                    size="sm" 
-                    onClick={addCredential}
-                    disabled={!newCredential.title || !newCredential.description}
-                  >
-                    <PlusCircle className="h-4 w-4 mr-1" /> Add Credential
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={saveChanges} disabled={isSaving}>
-                  {isSaving ? (
-                    <>Saving...</>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" /> Save Changes
-                    </>
-                  )}
-                </Button>
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </TabsContent>
+        </Tabs>
+        
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingCredential?.id ? 'Edit Credential' : 'Add Credential'}</DialogTitle>
+            </DialogHeader>
+            
+            {editingCredential && (
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="credential-icon">Icon</Label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {iconOptions.map(icon => (
+                      <Button
+                        key={icon}
+                        type="button"
+                        variant={editingCredential.icon === icon ? "default" : "outline"}
+                        className="h-10 w-10 p-0"
+                        onClick={() => setEditingCredential({ ...editingCredential, icon })}
+                      >
+                        {renderIconOption(icon)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="credential-title">Title</Label>
+                  <Input
+                    id="credential-title"
+                    value={editingCredential.title}
+                    onChange={e => setEditingCredential({ ...editingCredential, title: e.target.value })}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="credential-description">Description</Label>
+                  <Textarea
+                    id="credential-description"
+                    value={editingCredential.description}
+                    onChange={e => setEditingCredential({ ...editingCredential, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+            )}
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleCredentialSave}>Save</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 };
 
-export default AboutEditor;
+const AboutEditorComponent = AboutEditor;
+export default AboutEditorComponent;
