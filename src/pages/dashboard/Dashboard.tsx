@@ -11,6 +11,7 @@ import { FaqEditor } from '@/components/dashboard/FaqEditor';
 import FooterEditor from '@/components/dashboard/FooterEditor';
 import EnquiriesTable from '@/components/dashboard/EnquiriesTable';
 import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
+import MapLocationEditor from '@/components/dashboard/MapLocationEditor';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { api } from '@/lib/api';
@@ -156,6 +157,7 @@ const Dashboard = () => {
                 <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
                 <TabsTrigger value="about">About</TabsTrigger>
                 <TabsTrigger value="whyus">Why Us</TabsTrigger>
+                <TabsTrigger value="location">Location</TabsTrigger>
                 <TabsTrigger value="faq">FAQ</TabsTrigger>
                 <TabsTrigger value="footer">Footer</TabsTrigger>
                 <TabsTrigger value="forms">Form Editor</TabsTrigger>
@@ -178,6 +180,9 @@ const Dashboard = () => {
               </TabsContent>
               <TabsContent value="whyus" className="mt-4">
                 <WhyUsEditor />
+              </TabsContent>
+              <TabsContent value="location" className="mt-4">
+                <MapLocationEditor />
               </TabsContent>
               <TabsContent value="faq" className="mt-4">
                 <FaqEditor />
