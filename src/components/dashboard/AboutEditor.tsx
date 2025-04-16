@@ -56,7 +56,7 @@ const iconOptions = [
   "Briefcase", "Clock", "Heart", "Shield", "Star", "Zap"
 ];
 
-const AboutEditor = () => {
+export const AboutEditor = () => {
   const [data, setData] = useState(initialData);
   const [editingCredential, setEditingCredential] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -325,6 +325,3 @@ const AboutEditor = () => {
     </Card>
   );
 };
-
-const AboutEditorComponent = AboutEditor;
-export default AboutEditorComponent;

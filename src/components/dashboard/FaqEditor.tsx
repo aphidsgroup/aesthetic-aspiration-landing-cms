@@ -49,7 +49,7 @@ const initialData = {
   ]
 };
 
-const FaqEditor = () => {
+export const FaqEditor = () => {
   const [data, setData] = useState(initialData);
   const [editingFaq, setEditingFaq] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -235,6 +235,3 @@ const FaqEditor = () => {
     </Card>
   );
 };
-
-const FaqEditorComponent = FaqEditor;
-export default FaqEditorComponent;

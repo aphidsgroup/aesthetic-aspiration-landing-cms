@@ -66,7 +66,7 @@ const iconOptions = [
   "Award", "Clock", "Heart", "Shield", "Star", "Zap"
 ];
 
-const WhyUsEditor = () => {
+export const WhyUsEditor = () => {
   const [data, setData] = useState(initialData);
   const [editingFeature, setEditingFeature] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -281,6 +281,3 @@ const WhyUsEditor = () => {
     </Card>
   );
 };
-
-const WhyUsEditorComponent = WhyUsEditor;
-export default WhyUsEditorComponent;
