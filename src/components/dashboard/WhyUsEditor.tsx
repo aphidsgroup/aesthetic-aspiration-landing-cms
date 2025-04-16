@@ -18,7 +18,7 @@ import { Icons } from "@/components/ui/icons";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Globe, UserCheck, Award, Briefcase, Users, BookOpen, Trash2, Edit, Plus } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // Default data if nothing is loaded
 const defaultData = {
@@ -97,10 +97,6 @@ export const WhyUsEditor = () => {
           setData(JSON.parse(localData));
         } else {
           // If not in localStorage, try Supabase
-          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
-          const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
-          const supabase = createClient(supabaseUrl, supabaseKey);
-          
           const { data: whyUsData, error } = await supabase
             .from('content')
             .select('*')
@@ -136,24 +132,15 @@ export const WhyUsEditor = () => {
       localStorage.setItem('whyUsData', JSON.stringify(data));
       
       // Save to Supabase if available
-      try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        
-        const { error } = await supabase
-          .from('content')
-          .upsert(
-            { section: 'whyus', content: data },
-            { onConflict: 'section' }
-          );
+      const { error } = await supabase
+        .from('content')
+        .upsert(
+          { section: 'whyus', content: data },
+          { onConflict: 'section' }
+        );
           
-        if (error) {
-          console.error('Supabase save error:', error);
-        }
-      } catch (err) {
-        console.error('Error saving to Supabase:', err);
-        // Not treating this as a complete failure if localStorage worked
+      if (error) {
+        console.error('Supabase save error:', error);
       }
       
       setSaveStatus('success');

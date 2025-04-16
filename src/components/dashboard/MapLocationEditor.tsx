@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { MapPin, Phone, Mail, Clock, MapIcon, Check } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // Default contact data
 const initialContactData = {
@@ -61,12 +61,8 @@ const MapLocationEditor = () => {
         if (localData) {
           setContactData(JSON.parse(localData));
         } else {
-          // Otherwise try to get from Supabase if available
+          // Otherwise try to get from Supabase
           try {
-            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
-            const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
-            const supabase = createClient(supabaseUrl, supabaseKey);
-            
             const { data: contactSectionData, error } = await supabase
               .from('content')
               .select('*')
@@ -129,12 +125,8 @@ const MapLocationEditor = () => {
       // Save to localStorage
       localStorage.setItem('contactData', JSON.stringify(contactData));
       
-      // Save to Supabase if available
+      // Save to Supabase
       try {
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qehgflksdftpsxnqnekd.supabase.co';
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFlaGdmbGtzZGZ0cHN4bnFuZWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTA4NDc1MzcsImV4cCI6MjAyNjQyMzUzN30.tmQE5oGHaBgWhNoGJ9RSkLoMgSeEZv0MMUXz7YDVjwQ';
-        const supabase = createClient(supabaseUrl, supabaseKey);
-        
         const { error } = await supabase
           .from('content')
           .upsert(

@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from '@/lib/supabase';
 
 // Initial data (would come from API in production)
 const initialData = {
@@ -62,18 +63,16 @@ export const FaqEditor = () => {
       setIsLoading(true);
       try {
         // Try to load from Supabase
-        if (window.supabase) {
-          const { data: supabaseData, error } = await window.supabase
-            .from('content')
-            .select('*')
-            .eq('type', 'faq')
-            .single();
-            
-          if (supabaseData?.content && !error) {
-            setData(supabaseData.content);
-            setIsLoading(false);
-            return;
-          }
+        const { data: supabaseData, error } = await supabase
+          .from('content')
+          .select('*')
+          .eq('type', 'faq')
+          .single();
+          
+        if (supabaseData?.content && !error) {
+          setData(supabaseData.content);
+          setIsLoading(false);
+          return;
         }
         
         // Fall back to localStorage
@@ -98,14 +97,12 @@ export const FaqEditor = () => {
       localStorage.setItem('faqData', JSON.stringify(data));
       
       // Try to save to Supabase
-      if (window.supabase) {
-        await window.supabase
-          .from('content')
-          .upsert({
-            type: 'faq',
-            content: data
-          }, { onConflict: 'type' });
-      }
+      await supabase
+        .from('content')
+        .upsert({
+          type: 'faq',
+          content: data
+        }, { onConflict: 'type' });
       
       alert("Changes saved successfully!");
     } catch (error) {

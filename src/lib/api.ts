@@ -69,10 +69,24 @@ export interface AuthResponse {
 // Utility function to handle API errors
 const handleResponse = async (response: Response) => {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(`API Error: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`);
+    // Safely handle different error response formats
+    try {
+      const errorData = await response.json();
+      throw new Error(`API Error: ${response.status} ${response.statusText} ${JSON.stringify(errorData)}`);
+    } catch (e) {
+      // If we can't parse JSON, just return the status text
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
   }
-  return response.json();
+  
+  // Check if response is JSON before trying to parse it
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  }
+  
+  // For non-JSON responses
+  return response.text();
 };
 
 // Auth utilities
@@ -178,19 +192,24 @@ export const api = {
    * Authenticate with WordPress
    */
   login: async (username: string, password: string): Promise<AuthResponse> => {
-    const response = await fetch(AUTH_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
-    
-    const data = await handleResponse(response);
-    if (data.token) {
-      setAuthToken(data.token);
+    try {
+      const response = await fetch(AUTH_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      const data = await handleResponse(response);
+      if (data.token) {
+        setAuthToken(data.token);
+      }
+      return data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    return data;
   },
   
   /**
@@ -212,10 +231,27 @@ export const api = {
    */
   getCourses: async (): Promise<Course[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/courses?_embed=wp:featuredmedia&per_page=100`);
-      return await handleResponse(response);
+      const response = await fetch(`${API_BASE_URL}/courses?_embed`, {
+        headers: getAuthHeaders(),
+      });
+      
+      // If the API call fails for any reason, use fallback data
+      if (!response.ok) {
+        console.log('Failed to fetch courses from API, using fallback data');
+        return fallbackCourses;
+      }
+      
+      // Check if the response is valid JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('API returned non-JSON response for courses, using fallback data');
+        return fallbackCourses;
+      }
+      
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.warn('Failed to fetch courses from API, using fallback data', error);
+      console.error('Failed to fetch courses from API, using fallback data', error);
       return fallbackCourses;
     }
   },
@@ -287,10 +323,27 @@ export const api = {
    */
   getTestimonials: async (): Promise<Testimonial[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/testimonials?_embed=wp:featuredmedia&per_page=100`);
-      return await handleResponse(response);
+      const response = await fetch(`${API_BASE_URL}/testimonials?_embed`, {
+        headers: getAuthHeaders(),
+      });
+      
+      // If the API call fails for any reason, use fallback data
+      if (!response.ok) {
+        console.log('Failed to fetch testimonials from API, using fallback data');
+        return fallbackTestimonials;
+      }
+      
+      // Check if the response is valid JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.log('API returned non-JSON response for testimonials, using fallback data');
+        return fallbackTestimonials;
+      }
+      
+      const data = await response.json();
+      return data;
     } catch (error) {
-      console.warn('Failed to fetch testimonials from API, using fallback data', error);
+      console.error('Failed to fetch testimonials from API, using fallback data', error);
       return fallbackTestimonials;
     }
   },
